@@ -40,10 +40,10 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0A1F44] p-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-[#1A1A1A] p-4 relative overflow-hidden">
             {/* Gradient orbs */}
-            <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#8A2BE2]/20 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-[#3A86FF]/15 rounded-full blur-[100px]" />
+            <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#FFC857]/15 rounded-full blur-[120px]" />
+            <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-[#E91E8C]/10 rounded-full blur-[100px]" />
 
             {/* Grid pattern */}
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-60" />
@@ -84,7 +84,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-[#8A2BE2] h-11"
+                                className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-[#FFC857] h-11"
                             />
                         </div>
                         <div className="space-y-2">
@@ -96,12 +96,12 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-[#8A2BE2] h-11"
+                                className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-[#FFC857] h-11"
                             />
                         </div>
                         <Button
                             type="submit"
-                            className="w-full bg-[#8A2BE2] hover:bg-[#7B27CC] text-white shadow-lg shadow-[#8A2BE2]/25 transition-all duration-200 h-11 text-sm font-semibold rounded-lg"
+                            className="w-full bg-[#E91E8C] hover:bg-[#D4177F] text-white shadow-lg shadow-[#E91E8C]/25 transition-all duration-200 h-11 text-sm font-semibold rounded-lg"
                             disabled={loading}
                         >
                             {loading ? (
@@ -116,7 +116,7 @@ export default function LoginPage() {
                     </form>
                     <p className="text-center text-sm text-slate-400 mt-4">
                         Não tem conta?{" "}
-                        <Link href="/cadastro" className="text-[#8A2BE2] hover:text-[#A855F7] font-medium transition-colors">
+                        <Link href="/cadastro" className="text-[#FFC857] hover:text-[#FFD97A] font-medium transition-colors">
                             Criar conta
                         </Link>
                     </p>

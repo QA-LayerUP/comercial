@@ -152,7 +152,7 @@ export default async function ComparativoPage({
                     {trimestreData.map((q) => (
                         <Card key={q.label} className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
                             <CardContent className="p-5">
-                                <h3 className="text-lg font-bold text-[#0A1F44] mb-3">{q.label}</h3>
+                                <h3 className="text-lg font-bold text-[#1A1A1A] mb-3">{q.label}</h3>
                                 <div className="space-y-1 text-sm">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">{anoSelecionado}</span>

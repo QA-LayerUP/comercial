@@ -35,7 +35,7 @@ const formatMoneyFull = (val: number) =>
 const tooltipStyle = {
     borderRadius: "8px",
     border: "none",
-    background: "#0A1F44",
+    background: "#1A1A1A",
     color: "#F5F6FA",
     fontSize: "13px",
 };

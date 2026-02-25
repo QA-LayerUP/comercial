@@ -41,15 +41,22 @@ const formatMoneyFull = (val: number) =>
         maximumFractionDigits: 0,
     }).format(val);
 
-const PIE_COLORS = [
-    "#10b981", "#06b6d4", "#8b5cf6", "#f59e0b",
-    "#ef4444", "#3b82f6", "#ec4899", "#14b8a6",
+const BRAND_PIE_COLORS = [
+    "#E91E8C", "#FFC857", "#8A2BE2", "#00C896",
+    "#3A86FF", "#FF6B6B", "#14B8A6", "#F59E0B",
+];
+
+const TOP10_COLORS = [
+    "#E91E8C", "#E91E8C",
+    "#FFC857", "#FFC857",
+    "#00C896", "#00C896", "#00C896",
+    "#B0BEC5", "#B0BEC5", "#B0BEC5",
 ];
 
 const tooltipStyle = {
     borderRadius: "8px",
     border: "none",
-    background: "#0A1F44",
+    background: "#1A1A1A",
     color: "#F5F6FA",
     fontSize: "13px",
 };
@@ -69,12 +76,14 @@ export function DashboardCharts({ data }: { data: ChartData }) {
         [data.anoSelecionado]: data.mensalAtual[i + 1] || 0,
     }));
 
-    // Chart 2: Distribuição por Categoria (Pie chart)
-    const distribuicaoData = categorias.map((cat, i) => ({
-        name: cat,
-        value: data.realizadoPorCategoria[cat]?.total || 0,
-        fill: CORES_CATEGORIA[cat]?.border || PIE_COLORS[i % PIE_COLORS.length],
-    }));
+    // Chart 2: Distribuição por Categoria (Pie chart) — filtrar zeros
+    const distribuicaoData = categorias
+        .map((cat, i) => ({
+            name: cat,
+            value: data.realizadoPorCategoria[cat]?.total || 0,
+            fill: CORES_CATEGORIA[cat]?.border || BRAND_PIE_COLORS[i % BRAND_PIE_COLORS.length],
+        }))
+        .filter((d) => d.value > 0);
 
     // Chart 3: Top 10 Clientes
     const top10Data = data.top10Clientes.map((c) => ({
@@ -102,6 +111,8 @@ export function DashboardCharts({ data }: { data: ChartData }) {
                                 <Tooltip
                                     formatter={(val: number) => formatMoneyFull(val)}
                                     contentStyle={tooltipStyle}
+                                    itemStyle={{ color: "#F5F6FA" }}
+                                    labelStyle={{ color: "#F5F6FA" }}
                                 />
                                 <Legend />
                                 <Bar
@@ -111,7 +122,7 @@ export function DashboardCharts({ data }: { data: ChartData }) {
                                 />
                                 <Bar
                                     dataKey={data.anoSelecionado.toString()}
-                                    fill="#8A2BE2"
+                                    fill="#E91E8C"
                                     radius={[4, 4, 0, 0]}
                                 />
                             </BarChart>
@@ -142,13 +153,15 @@ export function DashboardCharts({ data }: { data: ChartData }) {
                                     }
                                     labelLine={true}
                                 >
-                                    {distribuicaoData.map((entry, index) => (
-                                        <Cell key={index} fill={entry.fill} />
+                                    {distribuicaoData.map((_, index) => (
+                                        <Cell key={index} fill={BRAND_PIE_COLORS[index % BRAND_PIE_COLORS.length]} />
                                     ))}
                                 </Pie>
                                 <Tooltip
                                     formatter={(val: number) => formatMoneyFull(val)}
                                     contentStyle={tooltipStyle}
+                                    itemStyle={{ color: "#F5F6FA" }}
+                                    labelStyle={{ color: "#F5F6FA" }}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -164,7 +177,7 @@ export function DashboardCharts({ data }: { data: ChartData }) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ResponsiveContainer width="100%" height={400}>
+                    <ResponsiveContainer width="100%" height={Math.max(350, top10Data.length * 42)}>
                         <BarChart data={top10Data} layout="vertical" margin={{ left: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
                             <XAxis type="number" tickFormatter={formatMoney} fontSize={11} />
@@ -182,12 +195,14 @@ export function DashboardCharts({ data }: { data: ChartData }) {
                                     return match?.nomeCompleto || label;
                                 }}
                                 contentStyle={tooltipStyle}
+                                itemStyle={{ color: "#F5F6FA" }}
+                                labelStyle={{ color: "#F5F6FA" }}
                             />
-                            <Bar dataKey="valor" name="Valor" fill="#10b981" radius={[0, 6, 6, 0]}>
+                            <Bar dataKey="valor" name="Valor" radius={[0, 6, 6, 0]}>
                                 {top10Data.map((_, index) => (
                                     <Cell
                                         key={index}
-                                        fill={index === 0 ? "#059669" : index < 3 ? "#10b981" : "#6ee7b7"}
+                                        fill={TOP10_COLORS[Math.min(index, TOP10_COLORS.length - 1)]}
                                     />
                                 ))}
                             </Bar>

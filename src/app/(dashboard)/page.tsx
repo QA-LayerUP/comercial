@@ -160,7 +160,7 @@ export default async function DashboardPage({
             </div>
 
             {/* Hero Card */}
-            <Card className="overflow-hidden bg-gradient-to-r from-[#0A1F44] to-[#122D5C] text-white border-0 rounded-2xl shadow-lg">
+            <Card className="overflow-hidden bg-gradient-to-r from-[#1A1A1A] to-[#2A2A2A] text-white border-0 rounded-2xl shadow-lg">
                 <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                         <div>
@@ -184,7 +184,7 @@ export default async function DashboardPage({
                     {/* Progress bar */}
                     <div className="w-full bg-white/15 rounded-full h-3">
                         <div
-                            className="bg-[#00C896] rounded-full h-3 transition-all duration-500"
+                            className="bg-[#E91E8C] rounded-full h-3 transition-all duration-500"
                             style={{ width: `${Math.min(pctAtingido, 100)}%` }}
                         />
                     </div>
@@ -218,7 +218,7 @@ export default async function DashboardPage({
                                         className="rounded-full h-1.5 transition-all duration-500"
                                         style={{
                                             width: `${Math.min(card.pct, 100)}%`,
-                                            backgroundColor: card.cor?.border || "#8A2BE2",
+                                            backgroundColor: card.cor?.border || "#FFC857",
                                         }}
                                     />
                                 </div>

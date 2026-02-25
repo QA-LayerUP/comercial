@@ -6,14 +6,19 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Save, Loader2, CalendarDays, Tag, DollarSign, Users2, FileText } from "lucide-react";
 import { MESES } from "@/lib/utils";
 import { createVenda, updateVenda } from "@/lib/actions/vendas";
 import { toast } from "sonner";
 import Link from "next/link";
 import type { Venda, SalesPerson, Cliente } from "@/lib/types/database";
+
+const selectClass =
+    "w-full h-10 rounded-lg border-transparent bg-[#F5F6FA] px-3 text-sm transition-colors focus:bg-white focus:border-[#FFC857] focus:ring-2 focus:ring-[#FFC857]/20 outline-none";
+
+const inputClass =
+    "h-10 bg-[#F5F6FA] border-transparent focus:bg-white focus:border-[#FFC857]";
 
 interface VendaFormProps {
     venda?: Venda | null;
@@ -26,6 +31,9 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
     const [loading, setLoading] = useState(false);
     const isEdit = !!venda;
     const anoAtual = new Date().getFullYear();
+
+    // Venda codigo auto-generation
+    const [vendaCodigo, setVendaCodigo] = useState(venda?.venda_codigo || "");
 
     // Cascading dropdowns state
     const [produto, setProduto] = useState(venda?.produto || "");
@@ -51,6 +59,32 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
     const comissaoValor = valorCalculo * ((parseFloat(comissaoPct) || 0) / 100);
 
     const supabase = createClient();
+
+    // Auto-generate venda_codigo for new vendas
+    useEffect(() => {
+        if (isEdit) return;
+        supabase
+            .from("vendas")
+            .select("venda_codigo")
+            .not("venda_codigo", "is", null)
+            .neq("venda_codigo", "")
+            .order("venda_codigo", { ascending: false })
+            .limit(1)
+            .single()
+            .then(({ data }) => {
+                if (data?.venda_codigo) {
+                    // Extract numeric part from "venda 0624" format
+                    const match = data.venda_codigo.match(/(\d+)/);
+                    if (match) {
+                        const num = parseInt(match[1], 10);
+                        const next = String(num + 1).padStart(match[1].length, "0");
+                        // Keep same prefix format
+                        const prefix = data.venda_codigo.slice(0, data.venda_codigo.indexOf(match[1]));
+                        setVendaCodigo(`${prefix}${next}`);
+                    }
+                }
+            });
+    }, [isEdit]);
 
     // Load dropdown options
     useEffect(() => {
@@ -180,196 +214,251 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" type="button" asChild>
-                    <Link href={isEdit ? `/vendas/${venda!.id}` : "/vendas"}>
-                        <ArrowLeft className="w-4 h-4" />
-                    </Link>
+        <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" type="button" asChild>
+                        <Link href={isEdit ? `/vendas/${venda!.id}` : "/vendas"}>
+                            <ArrowLeft className="w-4 h-4" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            {isEdit ? "Editar Venda" : "Nova Venda"}
+                        </h1>
+                        {isEdit && (
+                            <p className="text-sm text-muted-foreground">{venda?.nome_cliente}</p>
+                        )}
+                    </div>
+                </div>
+                <Button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-[#E91E8C] hover:bg-[#D4177F] text-white px-6"
+                >
+                    {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <>
+                            <Save className="w-4 h-4 mr-2" />
+                            Salvar
+                        </>
+                    )}
                 </Button>
-                <h1 className="text-2xl font-bold">
-                    {isEdit ? "Editar Venda" : "Nova Venda"}
-                </h1>
             </div>
 
             {/* Período e Cliente */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Período e Cliente</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <Label htmlFor="ano">Ano</Label>
-                        <Input name="ano" type="number" defaultValue={venda?.ano || anoAtual} required />
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-0">
+                <CardContent className="p-0">
+                    <div className="flex items-center gap-2 px-6 py-4 border-b border-[#F1F1F1]">
+                        <CalendarDays className="w-4 h-4 text-[#E91E8C]" />
+                        <h3 className="font-semibold text-sm">Período e Cliente</h3>
                     </div>
-                    <div>
-                        <Label htmlFor="mes">Mês</Label>
-                        <select name="mes" defaultValue={venda?.mes || 1} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" required>
-                            {MESES.map((m, i) => (
-                                <option key={i} value={i + 1}>{m}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <Label htmlFor="nome_cliente">Cliente</Label>
-                        <Input name="nome_cliente" defaultValue={venda?.nome_cliente || ""} required />
-                    </div>
-                    <div>
-                        <Label htmlFor="cliente_id">Vincular Cliente</Label>
-                        <select name="cliente_id" defaultValue={venda?.cliente_id?.toString() || ""} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
-                            <option value="">-- Nenhum --</option>
-                            {clientes.map((c) => (
-                                <option key={c.id} value={c.id}>{c.nome}</option>
-                            ))}
-                        </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ano</Label>
+                            <Input name="ano" type="number" defaultValue={venda?.ano || anoAtual} required className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mês</Label>
+                            <select name="mes" defaultValue={venda?.mes || 1} className={selectClass} required>
+                                {MESES.map((m, i) => (
+                                    <option key={i} value={i + 1}>{m}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</Label>
+                            <Input name="nome_cliente" defaultValue={venda?.nome_cliente || ""} required className={inputClass} placeholder="Nome do cliente..." />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Vincular Cliente</Label>
+                            <select name="cliente_id" defaultValue={venda?.cliente_id?.toString() || ""} className={selectClass}>
+                                <option value="">-- Nenhum --</option>
+                                {clientes.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.nome}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Classificação - Cascading Dropdowns */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Classificação</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <Label>Código Venda</Label>
-                        <Input name="venda_codigo" defaultValue={venda?.venda_codigo || ""} />
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-0">
+                <CardContent className="p-0">
+                    <div className="flex items-center gap-2 px-6 py-4 border-b border-[#F1F1F1]">
+                        <Tag className="w-4 h-4 text-[#FFC857]" />
+                        <h3 className="font-semibold text-sm">Classificação do Produto</h3>
                     </div>
-                    <div>
-                        <Label>Produto</Label>
-                        <select name="produto" value={produto} onChange={(e) => { setProduto(e.target.value); setCategoria(""); setPerfil(""); setTipo(""); setEspecificacao(""); setVigencia(""); }} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" required>
-                            <option value="">Selecione...</option>
-                            {produtos.map((p) => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <Label>Categoria</Label>
-                        <select name="categoria" value={categoria} onChange={(e) => { setCategoria(e.target.value); setPerfil(""); setTipo(""); setEspecificacao(""); setVigencia(""); }} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" required>
-                            <option value="">Selecione...</option>
-                            {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <Label>Perfil</Label>
-                        <select name="perfil" value={perfil} onChange={(e) => { setPerfil(e.target.value); setTipo(""); setEspecificacao(""); setVigencia(""); }} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" required>
-                            <option value="">Selecione...</option>
-                            {perfis.map((p) => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <Label>Tipo</Label>
-                        <select name="tipo" value={tipo} onChange={(e) => { setTipo(e.target.value); setEspecificacao(""); setVigencia(""); }} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" required>
-                            <option value="">Selecione...</option>
-                            {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <Label>Especificação</Label>
-                        <select name="especificacao" value={especificacao} onChange={(e) => { setEspecificacao(e.target.value); setVigencia(""); }} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" required>
-                            <option value="">Selecione...</option>
-                            {especificacoes.map((e) => <option key={e} value={e}>{e}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <Label>Vigência</Label>
-                        <select name="vigencia" value={vigencia} onChange={(e) => setVigencia(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
-                            <option value="">Selecione...</option>
-                            {vigencias.map((v) => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Código Venda</Label>
+                            <Input name="venda_codigo" value={vendaCodigo} onChange={(e) => setVendaCodigo(e.target.value)} className={inputClass} placeholder="Ex: 0608" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Produto</Label>
+                            <select name="produto" value={produto} onChange={(e) => { setProduto(e.target.value); setCategoria(""); setPerfil(""); setTipo(""); setEspecificacao(""); setVigencia(""); }} className={selectClass} required>
+                                <option value="">Selecione...</option>
+                                {produtos.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Categoria</Label>
+                            <select name="categoria" value={categoria} onChange={(e) => { setCategoria(e.target.value); setPerfil(""); setTipo(""); setEspecificacao(""); setVigencia(""); }} className={selectClass} required>
+                                <option value="">Selecione...</option>
+                                {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Perfil</Label>
+                            <select name="perfil" value={perfil} onChange={(e) => { setPerfil(e.target.value); setTipo(""); setEspecificacao(""); setVigencia(""); }} className={selectClass} required>
+                                <option value="">Selecione...</option>
+                                {perfis.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</Label>
+                            <select name="tipo" value={tipo} onChange={(e) => { setTipo(e.target.value); setEspecificacao(""); setVigencia(""); }} className={selectClass} required>
+                                <option value="">Selecione...</option>
+                                {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Especificação</Label>
+                            <select name="especificacao" value={especificacao} onChange={(e) => { setEspecificacao(e.target.value); setVigencia(""); }} className={selectClass} required>
+                                <option value="">Selecione...</option>
+                                {especificacoes.map((e) => <option key={e} value={e}>{e}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Vigência</Label>
+                            <select name="vigencia" value={vigencia} onChange={(e) => setVigencia(e.target.value)} className={selectClass}>
+                                <option value="">Selecione...</option>
+                                {vigencias.map((v) => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Financeiro */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Financeiro</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <Label>Valor (R$)</Label>
-                        <Input name="valor" type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} />
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-0">
+                <CardContent className="p-0">
+                    <div className="flex items-center gap-2 px-6 py-4 border-b border-[#F1F1F1]">
+                        <DollarSign className="w-4 h-4 text-[#00C896]" />
+                        <h3 className="font-semibold text-sm">Financeiro</h3>
                     </div>
-                    <div>
-                        <Label>Repasse/Desconto</Label>
-                        <Input name="repasse_desconto" defaultValue={venda?.repasse_desconto || ""} />
-                    </div>
-                    <div>
-                        <Label>Valor Repasse (R$)</Label>
-                        <Input name="valor_repasse" type="number" step="0.01" value={valorRepasse} onChange={(e) => setValorRepasse(e.target.value)} />
-                    </div>
-                    <div>
-                        <Label>Valor Base Comissão</Label>
-                        <Input value={valorCalculo.toFixed(2)} readOnly className="bg-muted" />
-                    </div>
-                    <div>
-                        <Label>Volume Horas</Label>
-                        <Input name="volume_horas" type="number" step="0.1" defaultValue={venda?.volume_horas || 0} />
-                    </div>
-                    <div>
-                        <Label>Valor/Hora</Label>
-                        <Input name="valor_por_hora" type="number" step="0.01" defaultValue={venda?.valor_por_hora || 0} />
-                    </div>
-                    <div>
-                        <Label>Comissão %</Label>
-                        <Input name="comissao_percentual" type="number" step="0.01" value={comissaoPct} onChange={(e) => setComissaoPct(e.target.value)} />
-                    </div>
-                    <div>
-                        <Label>Comissão Valor</Label>
-                        <Input value={`R$ ${comissaoValor.toFixed(2)}`} readOnly className="bg-muted" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor (R$)</Label>
+                            <Input name="valor" type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Repasse/Desconto</Label>
+                            <Input name="repasse_desconto" defaultValue={venda?.repasse_desconto || ""} className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor Repasse (R$)</Label>
+                            <Input name="valor_repasse" type="number" step="0.01" value={valorRepasse} onChange={(e) => setValorRepasse(e.target.value)} className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Base Comissão</Label>
+                            <Input value={valorCalculo.toFixed(2)} readOnly className="h-10 bg-[#F0F0F0] border-transparent font-mono cursor-not-allowed" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Volume Horas</Label>
+                            <Input name="volume_horas" type="number" step="0.1" defaultValue={venda?.volume_horas || 0} className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor/Hora</Label>
+                            <Input name="valor_por_hora" type="number" step="0.01" defaultValue={venda?.valor_por_hora || 0} className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Comissão %</Label>
+                            <Input name="comissao_percentual" type="number" step="0.01" value={comissaoPct} onChange={(e) => setComissaoPct(e.target.value)} className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Comissão Valor</Label>
+                            <Input value={`R$ ${comissaoValor.toFixed(2)}`} readOnly className="h-10 bg-[#F0F0F0] border-transparent font-mono cursor-not-allowed" />
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Equipe */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Equipe Comercial</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <Label>Vol. Sales People</Label>
-                        <Input name="volume_sales_people" type="number" defaultValue={venda?.volume_sales_people || 1} />
+            {/* Equipe Comercial */}
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-0">
+                <CardContent className="p-0">
+                    <div className="flex items-center gap-2 px-6 py-4 border-b border-[#F1F1F1]">
+                        <Users2 className="w-4 h-4 text-[#3A86FF]" />
+                        <h3 className="font-semibold text-sm">Equipe Comercial</h3>
                     </div>
-                    {[
-                        { name: "estrategia1_id", label: "Estratégia 1", cargo: "Estrategia" },
-                        { name: "estrategia2_id", label: "Estratégia 2", cargo: "Estrategia" },
-                        { name: "vendedor1_id", label: "Vendedor 1", cargo: "Vendedor" },
-                        { name: "vendedor2_id", label: "Vendedor 2", cargo: "Vendedor" },
-                        { name: "gestao_projetos_id", label: "Gestão Projetos", cargo: "Gestao de projetos" },
-                        { name: "customer_success_id", label: "Customer Success", cargo: "Customer Success" },
-                        { name: "sdr_id", label: "SDR", cargo: "SDR" },
-                    ].map((field) => (
-                        <div key={field.name}>
-                            <Label>{field.label}</Label>
-                            <select name={field.name} defaultValue={venda?.[field.name as keyof Venda]?.toString() || ""} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
-                                <option value="">-- Nenhum --</option>
-                                {spByCargo(field.cargo).map((sp) => (
-                                    <option key={sp.id} value={sp.id}>{sp.nome}</option>
-                                ))}
-                            </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Vol. Sales People</Label>
+                            <Input name="volume_sales_people" type="number" defaultValue={venda?.volume_sales_people || 1} className={inputClass} />
                         </div>
-                    ))}
+                        {[
+                            { name: "estrategia1_id", label: "Estratégia 1", cargo: "Estrategia" },
+                            { name: "estrategia2_id", label: "Estratégia 2", cargo: "Estrategia" },
+                            { name: "vendedor1_id", label: "Vendedor 1", cargo: "Vendedor" },
+                            { name: "vendedor2_id", label: "Vendedor 2", cargo: "Vendedor" },
+                            { name: "gestao_projetos_id", label: "Gestão Projetos", cargo: "Gestao de projetos" },
+                            { name: "customer_success_id", label: "Customer Success", cargo: "Customer Success" },
+                            { name: "sdr_id", label: "SDR", cargo: "SDR" },
+                        ].map((field) => (
+                            <div key={field.name} className="space-y-1.5">
+                                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{field.label}</Label>
+                                <select name={field.name} defaultValue={venda?.[field.name as keyof Venda]?.toString() || ""} className={selectClass}>
+                                    <option value="">-- Nenhum --</option>
+                                    {spByCargo(field.cargo).map((sp) => (
+                                        <option key={sp.id} value={sp.id}>{sp.nome}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ))}
+                    </div>
                 </CardContent>
             </Card>
 
             {/* Observações */}
-            <Card>
-                <CardContent className="pt-6">
-                    <Label>Observações</Label>
-                    <textarea
-                        name="observacoes"
-                        defaultValue={venda?.observacoes || ""}
-                        rows={3}
-                        className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    />
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-0">
+                <CardContent className="p-0">
+                    <div className="flex items-center gap-2 px-6 py-4 border-b border-[#F1F1F1]">
+                        <FileText className="w-4 h-4 text-[#FFC857]" />
+                        <h3 className="font-semibold text-sm">Observações</h3>
+                    </div>
+                    <div className="p-6">
+                        <textarea
+                            name="observacoes"
+                            defaultValue={venda?.observacoes || ""}
+                            rows={4}
+                            placeholder="Notas adicionais sobre esta venda..."
+                            className="w-full rounded-lg border-transparent bg-[#F5F6FA] px-4 py-3 text-sm transition-colors focus:bg-white focus:border-[#FFC857] focus:ring-2 focus:ring-[#FFC857]/20 outline-none resize-none"
+                        />
+                    </div>
                 </CardContent>
             </Card>
 
-            <div className="flex justify-end">
-                <Button type="submit" disabled={loading} className="min-w-32">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salvar</>}
+            {/* Bottom Save */}
+            <div className="flex items-center justify-between pt-2 pb-8">
+                <Button type="button" variant="ghost" className="text-muted-foreground" asChild>
+                    <Link href={isEdit ? `/vendas/${venda!.id}` : "/vendas"}>Cancelar</Link>
+                </Button>
+                <Button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-[#E91E8C] hover:bg-[#D4177F] text-white px-8"
+                >
+                    {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <>
+                            <Save className="w-4 h-4 mr-2" />
+                            Salvar Venda
+                        </>
+                    )}
                 </Button>
             </div>
         </form>

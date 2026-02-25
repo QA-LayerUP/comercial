@@ -87,20 +87,21 @@ export default async function VendasPage({
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Vendas</h1>
-                    <p className="text-muted-foreground">{count || 0} vendas encontradas</p>
+                    <p className="text-muted-foreground text-sm">{count || 0} vendas encontradas</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="border-[#0A1F44] text-[#0A1F44] hover:bg-[#0A1F44] hover:text-white" asChild>
+                    <Button variant="outline" size="sm" className="border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white" asChild>
                         <a href={`/api/vendas/export?${new URLSearchParams(Object.fromEntries(Object.entries({ ano: params.ano, mes: params.mes, categoria: params.categoria, busca: params.busca }).filter((entry): entry is [string, string] => entry[1] !== undefined))).toString()}`}>
                             <Download className="w-4 h-4 mr-2" />
                             Exportar CSV
                         </a>
                     </Button>
                     {isAdmin && (
-                        <Button size="sm" className="bg-[#8A2BE2] hover:bg-[#7B27CC] text-white" asChild>
+                        <Button size="sm" className="bg-[#E91E8C] hover:bg-[#D4177F] text-white" asChild>
                             <Link href="/vendas/nova">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Nova Venda
@@ -110,80 +111,89 @@ export default async function VendasPage({
                 </div>
             </div>
 
-            {/* Filtros */}
-            <Card className="p-4 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-                <form className="flex flex-wrap gap-3 items-end">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs text-muted-foreground">Busca</label>
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                name="busca"
-                                placeholder="Nome do cliente..."
-                                defaultValue={params.busca}
-                                className="pl-8 w-56"
-                            />
+            {/* Filtros — Grid Layout */}
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-0 bg-white">
+                <form className="p-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        {/* Busca — spans wider on large */}
+                        <div className="lg:col-span-2 space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Busca</label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    name="busca"
+                                    placeholder="Buscar por cliente..."
+                                    defaultValue={params.busca}
+                                    className="pl-9 h-10 bg-[#F5F6FA] border-transparent focus:bg-white focus:border-[#FFC857]"
+                                />
+                            </div>
+                        </div>
+                        {/* Ano */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ano</label>
+                            <select
+                                name="ano"
+                                defaultValue={params.ano || ""}
+                                className="w-full h-10 rounded-lg border-transparent bg-[#F5F6FA] px-3 text-sm transition-colors focus:bg-white focus:border-[#FFC857] focus:ring-2 focus:ring-[#FFC857]/20 outline-none"
+                            >
+                                <option value="">Todos</option>
+                                {anos.map((a) => (
+                                    <option key={a} value={a}>{a}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {/* Mês */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mês</label>
+                            <select
+                                name="mes"
+                                defaultValue={params.mes || ""}
+                                className="w-full h-10 rounded-lg border-transparent bg-[#F5F6FA] px-3 text-sm transition-colors focus:bg-white focus:border-[#FFC857] focus:ring-2 focus:ring-[#FFC857]/20 outline-none"
+                            >
+                                <option value="">Todos</option>
+                                {MESES.map((m, i) => (
+                                    <option key={i} value={i + 1}>{m}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {/* Categoria */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Categoria</label>
+                            <select
+                                name="categoria"
+                                defaultValue={params.categoria || ""}
+                                className="w-full h-10 rounded-lg border-transparent bg-[#F5F6FA] px-3 text-sm transition-colors focus:bg-white focus:border-[#FFC857] focus:ring-2 focus:ring-[#FFC857]/20 outline-none"
+                            >
+                                <option value="">Todas</option>
+                                {categorias.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs text-muted-foreground">Ano</label>
-                        <select
-                            name="ano"
-                            defaultValue={params.ano || ""}
-                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                        >
-                            <option value="">Todos</option>
-                            {anos.map((a) => (
-                                <option key={a} value={a}>{a}</option>
-                            ))}
-                        </select>
+                    {/* Action row */}
+                    <div className="flex items-center gap-3 mt-4 pt-4 border-t border-[#F1F1F1]">
+                        <Button type="submit" size="sm" className="bg-[#E91E8C] hover:bg-[#D4177F] text-white px-6">
+                            <Search className="w-4 h-4 mr-1.5" /> Filtrar
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" className="text-muted-foreground hover:text-[#1A1A1A]" asChild>
+                            <Link href="/vendas">Limpar filtros</Link>
+                        </Button>
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs text-muted-foreground">Mês</label>
-                        <select
-                            name="mes"
-                            defaultValue={params.mes || ""}
-                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                        >
-                            <option value="">Todos</option>
-                            {MESES.map((m, i) => (
-                                <option key={i} value={i + 1}>{m}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs text-muted-foreground">Categoria</label>
-                        <select
-                            name="categoria"
-                            defaultValue={params.categoria || ""}
-                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                        >
-                            <option value="">Todas</option>
-                            {categorias.map((c) => (
-                                <option key={c} value={c}>{c}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <Button type="submit" size="sm" className="bg-[#8A2BE2] hover:bg-[#7B27CC] text-white">
-                        <Search className="w-4 h-4 mr-1" /> Filtrar
-                    </Button>
-                    <Button type="button" variant="ghost" size="sm" asChild>
-                        <Link href="/vendas">Limpar</Link>
-                    </Button>
                 </form>
             </Card>
 
             {/* Tabela */}
-            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] overflow-hidden">
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] overflow-hidden border-0">
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>Ano/Mês</TableHead>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Categoria</TableHead>
-                            <TableHead>Produto</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                            <TableHead className="text-right">Comissão</TableHead>
+                        <TableRow className="bg-[#F5F6FA] hover:bg-[#F5F6FA]">
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-[#616161]">Período</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-[#616161]">Cliente</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-[#616161]">Categoria</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-[#616161]">Produto</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-[#616161] text-right">Valor</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-[#616161] text-right">Comissão</TableHead>
                             <TableHead className="w-12"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -191,31 +201,39 @@ export default async function VendasPage({
                         {vendas?.map((v) => {
                             const cor = CORES_CATEGORIA[v.categoria];
                             return (
-                                <TableRow key={v.id} className="group">
-                                    <TableCell className="font-mono text-sm">
-                                        {v.ano}/{String(v.mes).padStart(2, "0")}
-                                    </TableCell>
-                                    <TableCell className="font-medium max-w-[200px] truncate">
-                                        {v.nome_cliente}
+                                <TableRow key={v.id} className="group hover:bg-[#F9F9FB] transition-colors">
+                                    <TableCell className="font-mono text-sm text-muted-foreground">
+                                        {MESES[v.mes - 1]?.slice(0, 3)}/{v.ano}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge className={`${cor?.tw || "bg-gray-500"} text-white text-xs`}>
-                                            {v.categoria}
-                                        </Badge>
+                                        <Link href={`/vendas/${v.id}`} className="font-medium text-sm hover:text-[#E91E8C] transition-colors max-w-[220px] truncate block">
+                                            {v.nome_cliente}
+                                        </Link>
                                     </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
+                                    <TableCell>
+                                        <span
+                                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                            style={{
+                                                backgroundColor: (cor?.border || "#999") + "18",
+                                                color: cor?.border || "#666",
+                                            }}
+                                        >
+                                            {v.categoria}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground max-w-[180px] truncate">
                                         {v.produto}
                                     </TableCell>
-                                    <TableCell className="text-right font-mono">
+                                    <TableCell className="text-right font-mono font-medium text-sm">
                                         {formatMoney(Number(v.valor))}
                                     </TableCell>
-                                    <TableCell className="text-right font-mono text-sm">
+                                    <TableCell className="text-right font-mono text-sm text-muted-foreground">
                                         {Number(v.comissao_percentual).toFixed(1)}%
                                     </TableCell>
                                     <TableCell>
-                                        <Button variant="ghost" size="icon" asChild className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button variant="ghost" size="icon" asChild className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Link href={`/vendas/${v.id}`}>
-                                                <Eye className="w-4 h-4" />
+                                                <Eye className="w-4 h-4 text-muted-foreground" />
                                             </Link>
                                         </Button>
                                     </TableCell>
@@ -224,7 +242,7 @@ export default async function VendasPage({
                         })}
                         {(!vendas || vendas.length === 0) && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
                                     Nenhuma venda encontrada
                                 </TableCell>
                             </TableRow>
@@ -235,18 +253,18 @@ export default async function VendasPage({
 
             {/* Paginação */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-3">
                     {page > 1 && (
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={buildUrl({ page: (page - 1).toString() })}>Anterior</Link>
+                        <Button variant="outline" size="sm" className="rounded-lg" asChild>
+                            <Link href={buildUrl({ page: (page - 1).toString() })}>← Anterior</Link>
                         </Button>
                     )}
-                    <span className="text-sm text-muted-foreground">
-                        Página {page} de {totalPages}
+                    <span className="text-sm text-muted-foreground font-medium px-3">
+                        {page} / {totalPages}
                     </span>
                     {page < totalPages && (
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={buildUrl({ page: (page + 1).toString() })}>Próxima</Link>
+                        <Button variant="outline" size="sm" className="rounded-lg" asChild>
+                            <Link href={buildUrl({ page: (page + 1).toString() })}>Próxima →</Link>
                         </Button>
                     )}
                 </div>

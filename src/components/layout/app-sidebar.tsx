@@ -111,8 +111,8 @@ export function AppSidebar({ profile }: AppSidebarProps) {
                         />
                     ) : (
                         <Image
-                            src="/LOGO-LAYER.webp"
-                            alt="Layer Comercial"
+                            src="/logo-layerup.svg"
+                            alt="Layer Up"
                             width={160}
                             height={36}
                             className="h-9 w-auto object-contain"
@@ -236,7 +236,7 @@ export function AppSidebar({ profile }: AppSidebarProps) {
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className="w-full h-auto py-2">
                                     <Avatar className="w-8 h-8 shrink-0">
-                                        <AvatarFallback className="bg-gradient-to-br from-[#8A2BE2] to-[#6B21A8] text-white text-xs font-semibold">
+                                        <AvatarFallback className="bg-gradient-to-br from-[#FFC857] to-[#E91E8C] text-white text-xs font-semibold">
                                             {initials}
                                         </AvatarFallback>
                                     </Avatar>

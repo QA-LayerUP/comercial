@@ -37,7 +37,7 @@ const formatMoneyFull = (val: number) =>
 const tooltipStyle = {
     borderRadius: "8px",
     border: "none",
-    background: "#0A1F44",
+    background: "#1A1A1A",
     color: "#F5F6FA",
     fontSize: "13px",
 };
@@ -68,9 +68,9 @@ export function ComparativoChart({ data }: { data: ComparativoChartData }) {
                         <Line
                             type="monotone"
                             dataKey={data.anoSelecionado.toString()}
-                            stroke="#8A2BE2"
+                            stroke="#E91E8C"
                             strokeWidth={2.5}
-                            dot={{ r: 4, fill: "#8A2BE2" }}
+                            dot={{ r: 4, fill: "#E91E8C" }}
                             activeDot={{ r: 6 }}
                         />
                         <Line
