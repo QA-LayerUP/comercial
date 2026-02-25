@@ -10,13 +10,5 @@ export default async function EquipePage() {
     const supabase = await createClient();
     const { data: salesPeople } = await supabase.from("sales_people").select("*").order("cargo").order("nome");
 
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Equipe Comercial</h1>
-                <p className="text-muted-foreground">Gerencie a equipe de vendas</p>
-            </div>
-            <EquipeManager salesPeople={(salesPeople || []) as any} />
-        </div>
-    );
+    return <EquipeManager salesPeople={(salesPeople || []) as any} />;
 }

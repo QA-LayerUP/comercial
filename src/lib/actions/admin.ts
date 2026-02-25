@@ -179,3 +179,69 @@ export async function deleteSalesPerson(id: number) {
     revalidatePath("/admin/equipe");
     return { success: true };
 }
+
+// ---- REGRAS DE COMISSÃO ----
+export async function addRegraComissao(formData: FormData) {
+    const admin = await isAdmin();
+    if (!admin) return { error: "Acesso restrito." };
+
+    const supabase = await createServerClient();
+    const produto = (formData.get("produto") as string).trim();
+    const categoria = formData.get("categoria") as string || "-";
+    const perfil = formData.get("perfil") as string || "-";
+    const tipo = formData.get("tipo") as string || "-";
+    const especificacao = formData.get("especificacao") as string || "-";
+    const vigencia = formData.get("vigencia") as string || "-";
+    const comissao_percentual = parseFloat(formData.get("comissao_percentual") as string) || 0;
+
+    if (!produto) return { error: "Preencha o produto." };
+
+    const { error } = await supabase.from("regra_comissao").insert({
+        produto, categoria, perfil, tipo, especificacao, vigencia, comissao_percentual
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/comissao");
+    revalidatePath("/vendas/nova");
+    revalidatePath("/vendas/[id]/editar");
+    return { success: true };
+}
+
+export async function updateRegraComissao(id: number, formData: FormData) {
+    const admin = await isAdmin();
+    if (!admin) return { error: "Acesso restrito." };
+
+    const supabase = await createServerClient();
+    const produto = (formData.get("produto") as string).trim();
+    const categoria = formData.get("categoria") as string || "-";
+    const perfil = formData.get("perfil") as string || "-";
+    const tipo = formData.get("tipo") as string || "-";
+    const especificacao = formData.get("especificacao") as string || "-";
+    const vigencia = formData.get("vigencia") as string || "-";
+    const comissao_percentual = parseFloat(formData.get("comissao_percentual") as string) || 0;
+
+    if (!produto) return { error: "Preencha o produto." };
+
+    const { error } = await supabase.from("regra_comissao").update({
+        produto, categoria, perfil, tipo, especificacao, vigencia, comissao_percentual
+    }).eq("id", id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/comissao");
+    return { success: true };
+}
+
+export async function deleteRegraComissao(id: number) {
+    const admin = await isAdmin();
+    if (!admin) return { error: "Acesso restrito." };
+
+    const supabase = await createServerClient();
+    const { error } = await supabase.from("regra_comissao").delete().eq("id", id);
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/comissao");
+    return { success: true };
+}
+

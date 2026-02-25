@@ -1,28 +1,73 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2, Loader2 } from "lucide-react";
 import { deleteCliente } from "@/lib/actions/clientes";
 import { toast } from "sonner";
 
 export function DeleteClienteButton({ clienteId }: { clienteId: number }) {
     const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
 
     async function handleDelete() {
-        if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
+        setLoading(true);
         const result = await deleteCliente(clienteId);
+        setLoading(false);
         if (result.error) {
             toast.error(result.error);
         } else {
             toast.success("Cliente excluído com sucesso.");
+            setOpen(false);
             router.push("/clientes");
         }
     }
 
     return (
-        <Button variant="destructive" size="sm" onClick={handleDelete}>
-            <Trash2 className="w-4 h-4 mr-2" /> Excluir
-        </Button>
+        <AlertDialog open={open} onOpenChange={setOpen}>
+            <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="rounded-lg">
+                    <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-white rounded-2xl">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Essa ação não pode ser desfeita. O cliente será removido permanentemente do sistema.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={loading} className="rounded-lg">
+                        Cancelar
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={loading}
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                    >
+                        {loading ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                            <Trash2 className="w-4 h-4 mr-2" />
+                        )}
+                        Sim, excluir
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
