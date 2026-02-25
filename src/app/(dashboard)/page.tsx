@@ -1,23 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Target, TrendingUp, Percent, ShoppingCart } from "lucide-react";
-import { formatMoney, formatPercent, CORES_CATEGORIA } from "@/lib/utils";
+import { formatMoney, formatPercent, CORES_CATEGORIA, CATEGORIAS } from "@/lib/utils";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { YearSelector } from "@/components/dashboard/year-selector";
 
@@ -39,13 +22,35 @@ export default async function DashboardPage({
     if (anos.length === 0) anos.push(new Date().getFullYear());
 
     const anoSelecionado = params.ano ? parseInt(params.ano) : anos[0];
+    const anoAnterior = anoSelecionado - 1;
 
-    // Realizado por categoria
+    // Vendas do ano selecionado
     const { data: vendasAno } = await supabase
         .from("vendas")
-        .select("categoria, valor")
+        .select("mes, categoria, valor, nome_cliente")
         .eq("ano", anoSelecionado);
 
+    // Vendas do ano anterior
+    const { data: vendasAnterior } = await supabase
+        .from("vendas")
+        .select("mes, categoria, valor")
+        .eq("ano", anoAnterior);
+
+    // Metas por categoria
+    const { data: metasData } = await supabase
+        .from("metas")
+        .select("categoria, valor_meta")
+        .eq("ano", anoSelecionado)
+        .not("mes", "is", null);
+
+    // Meta anual total (sum de metas sem mês = meta anual, ou soma das metas mensais)
+    const { data: metaAnualData } = await supabase
+        .from("metas")
+        .select("categoria, valor_meta")
+        .eq("ano", anoSelecionado)
+        .is("mes", null);
+
+    // Realizado por categoria
     const realizadoPorCategoria: Record<string, { total: number; qtd: number }> = {};
     vendasAno?.forEach((v) => {
         if (!realizadoPorCategoria[v.categoria]) {
@@ -55,48 +60,52 @@ export default async function DashboardPage({
         realizadoPorCategoria[v.categoria].qtd += 1;
     });
 
-    // Metas por categoria
-    const { data: metasData } = await supabase
-        .from("metas")
-        .select("categoria, valor_meta")
-        .eq("ano", anoSelecionado)
-        .not("mes", "is", null);
-
+    // Metas por categoria (soma mensal)
     const metasPorCategoria: Record<string, number> = {};
     metasData?.forEach((m) => {
         metasPorCategoria[m.categoria] = (metasPorCategoria[m.categoria] || 0) + Number(m.valor_meta);
     });
 
-    // Totais
-    const totalRealizado = Object.values(realizadoPorCategoria).reduce((s, v) => s + v.total, 0);
-    const totalMeta = Object.values(metasPorCategoria).reduce((s, v) => s + v, 0);
-    const totalVendas = Object.values(realizadoPorCategoria).reduce((s, v) => s + v.qtd, 0);
-    const pctAtingido = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
-
-    // Dados para gráficos (mensal)
-    const { data: vendasMensal } = await supabase
-        .from("vendas")
-        .select("mes, categoria, valor")
-        .eq("ano", anoSelecionado);
-
-    // Mensal ano anterior
-    const anoAnterior = anoSelecionado - 1;
-    const { data: vendasAnterior } = await supabase
-        .from("vendas")
-        .select("mes, categoria, valor")
-        .eq("ano", anoAnterior);
-
-    // Preparar dados de chart
-    const realizadoAnterior: Record<string, number> = {};
-    vendasAnterior?.forEach((v) => {
-        realizadoAnterior[v.categoria] = (realizadoAnterior[v.categoria] || 0) + Number(v.valor);
+    // Meta anual por categoria (se houver)
+    const metaAnualPorCategoria: Record<string, number> = {};
+    metaAnualData?.forEach((m) => {
+        metaAnualPorCategoria[m.categoria] = Number(m.valor_meta);
     });
 
+    // Normalize helper — remove accents para evitar duplicatas (ex: "Renovacao" vs "Renovação")
+    function normalizeKey(key: string): string {
+        return key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    function findValue<T>(map: Record<string, T>, key: string): T | undefined {
+        // Exact match first
+        if (map[key] !== undefined) return map[key];
+        // Normalized match
+        const normKey = normalizeKey(key);
+        for (const k of Object.keys(map)) {
+            if (normalizeKey(k) === normKey) return map[k];
+        }
+        return undefined;
+    }
+
+    // Use meta anual se existir, senão soma mensal
+    const metaFinalPorCategoria: Record<string, number> = {};
+    // Usar CATEGORIAS fixas para evitar duplicatas
+    CATEGORIAS.forEach((cat) => {
+        metaFinalPorCategoria[cat] = findValue(metaAnualPorCategoria, cat) ?? findValue(metasPorCategoria, cat) ?? 0;
+    });
+
+    // Totais
+    const totalRealizado = Object.values(realizadoPorCategoria).reduce((s, v) => s + v.total, 0);
+    const totalMeta = Object.values(metaFinalPorCategoria).reduce((s, v) => s + v, 0);
+    const pctAtingido = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
+
+    // Mensal
     const mensalAtual: Record<number, number> = {};
     const mensalAnterior: Record<number, number> = {};
     const mensalPorCategoria: Record<number, Record<string, number>> = {};
 
-    vendasMensal?.forEach((v) => {
+    vendasAno?.forEach((v) => {
         mensalAtual[v.mes] = (mensalAtual[v.mes] || 0) + Number(v.valor);
         if (!mensalPorCategoria[v.mes]) mensalPorCategoria[v.mes] = {};
         mensalPorCategoria[v.mes][v.categoria] =
@@ -106,160 +115,121 @@ export default async function DashboardPage({
         mensalAnterior[v.mes] = (mensalAnterior[v.mes] || 0) + Number(v.valor);
     });
 
+    // Top 10 Clientes
+    const clienteMap: Record<string, number> = {};
+    vendasAno?.forEach((v) => {
+        clienteMap[v.nome_cliente] = (clienteMap[v.nome_cliente] || 0) + Number(v.valor);
+    });
+    const top10Clientes = Object.entries(clienteMap)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([nome, valor]) => ({ nome, valor }));
+
+    // Category cards — sempre 4 cards fixos
+    const categoryCards = CATEGORIAS.map((cat) => {
+        const realizadoEntry = findValue(realizadoPorCategoria, cat);
+        const realizado = realizadoEntry?.total || 0;
+        const meta = metaFinalPorCategoria[cat] || 0;
+        const pct = meta > 0 ? (realizado / meta) * 100 : 0;
+        const cor = CORES_CATEGORIA[cat];
+        return { categoria: cat, realizado, meta, pct, cor };
+    });
+
     const chartData = {
         realizadoPorCategoria,
-        metasPorCategoria,
-        realizadoAnterior,
+        metaFinalPorCategoria,
         mensalAtual,
         mensalAnterior,
         mensalPorCategoria,
+        top10Clientes,
         anoSelecionado,
         anoAnterior,
     };
 
-    const categorias = [
-        ...new Set([
-            ...Object.keys(realizadoPorCategoria),
-            ...Object.keys(metasPorCategoria),
-        ]),
-    ];
-
-    const kpis = [
-        {
-            label: "Meta Total",
-            value: formatMoney(totalMeta),
-            icon: Target,
-            color: "text-blue-600",
-            bg: "bg-blue-50",
-        },
-        {
-            label: "Realizado",
-            value: formatMoney(totalRealizado),
-            icon: TrendingUp,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
-        },
-        {
-            label: "% Atingido",
-            value: formatPercent(pctAtingido),
-            icon: Percent,
-            color:
-                pctAtingido >= 100
-                    ? "text-emerald-600"
-                    : pctAtingido >= 70
-                        ? "text-amber-600"
-                        : "text-red-600",
-            bg:
-                pctAtingido >= 100
-                    ? "bg-emerald-50"
-                    : pctAtingido >= 70
-                        ? "bg-amber-50"
-                        : "bg-red-50",
-        },
-        {
-            label: "Total de Vendas",
-            value: totalVendas.toString(),
-            icon: ShoppingCart,
-            color: "text-purple-600",
-            bg: "bg-purple-50",
-        },
-    ];
-
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Dashboard Comercial</h1>
                     <p className="text-muted-foreground">
-                        Visão geral do desempenho comercial
+                        Visão geral das metas e resultados — {anoSelecionado}
                     </p>
                 </div>
                 <YearSelector anos={anos} anoSelecionado={anoSelecionado} />
             </div>
 
-            {/* KPI Cards */}
+            {/* Hero Card */}
+            <Card className="overflow-hidden bg-gradient-to-r from-[#0A1F44] to-[#122D5C] text-white border-0 rounded-2xl shadow-lg">
+                <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                        <div>
+                            <p className="text-white/70 text-sm font-medium">
+                                Total Realizado {anoSelecionado}
+                            </p>
+                            <p className="text-4xl font-bold mt-1 tracking-tight">
+                                {formatMoney(totalRealizado)}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-white/70 text-sm font-medium">Meta Anual</p>
+                            <p className="text-2xl font-bold mt-1">
+                                {formatMoney(totalMeta)}
+                            </p>
+                            <p className="text-white/70 text-sm mt-0.5">
+                                {formatPercent(pctAtingido)} atingido
+                            </p>
+                        </div>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="w-full bg-white/15 rounded-full h-3">
+                        <div
+                            className="bg-[#00C896] rounded-full h-3 transition-all duration-500"
+                            style={{ width: `${Math.min(pctAtingido, 100)}%` }}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Category Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {kpis.map((kpi) => (
-                    <Card key={kpi.label} className="overflow-hidden">
-                        <CardContent className="p-5">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground font-medium">
-                                        {kpi.label}
-                                    </p>
-                                    <p className={`text-2xl font-bold mt-1 ${kpi.color}`}>
-                                        {kpi.value}
-                                    </p>
+                {categoryCards.map((card) => {
+                    const pctColor = card.pct >= 100 ? "text-[#00C896]" : "text-[#E63946]";
+                    return (
+                        <Card key={card.categoria} className="overflow-hidden rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-medium text-muted-foreground">
+                                        {card.categoria}
+                                    </h3>
+                                    <span className={`text-sm font-semibold ${pctColor}`}>
+                                        {card.pct >= 100 ? "↗" : "↘"} {formatPercent(card.pct)}
+                                    </span>
                                 </div>
-                                <div
-                                    className={`w-12 h-12 rounded-xl ${kpi.bg} flex items-center justify-center`}
-                                >
-                                    <kpi.icon className={`w-6 h-6 ${kpi.color}`} />
+                                <p className="text-2xl font-bold tracking-tight text-[#1F1F1F]">
+                                    {formatMoney(card.realizado)}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Meta: {formatMoney(card.meta)}
+                                </p>
+                                {/* Progress bar */}
+                                <div className="w-full bg-muted rounded-full h-1.5 mt-3">
+                                    <div
+                                        className="rounded-full h-1.5 transition-all duration-500"
+                                        style={{
+                                            width: `${Math.min(card.pct, 100)}%`,
+                                            backgroundColor: card.cor?.border || "#8A2BE2",
+                                        }}
+                                    />
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </div>
 
             {/* Charts */}
             <DashboardCharts data={chartData} />
-
-            {/* Tabela detalhada */}
-            <Card>
-                <div className="p-4 border-b">
-                    <h3 className="font-semibold">Detalhamento por Categoria</h3>
-                </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Categoria</TableHead>
-                            <TableHead className="text-right">Meta</TableHead>
-                            <TableHead className="text-right">Realizado</TableHead>
-                            <TableHead className="text-right">%</TableHead>
-                            <TableHead className="text-right">Qtd. Vendas</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {categorias.map((cat) => {
-                            const meta = metasPorCategoria[cat] || 0;
-                            const real = realizadoPorCategoria[cat]?.total || 0;
-                            const pct = meta > 0 ? (real / meta) * 100 : 0;
-                            const qtd = realizadoPorCategoria[cat]?.qtd || 0;
-                            const cor = CORES_CATEGORIA[cat];
-
-                            return (
-                                <TableRow key={cat}>
-                                    <TableCell>
-                                        <Badge
-                                            className={`${cor?.tw || "bg-gray-500"} text-white hover:opacity-80`}
-                                        >
-                                            {cat}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">
-                                        {formatMoney(meta)}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">
-                                        {formatMoney(real)}
-                                    </TableCell>
-                                    <TableCell
-                                        className={`text-right font-semibold ${pct >= 100
-                                                ? "text-emerald-600"
-                                                : pct >= 70
-                                                    ? "text-amber-600"
-                                                    : "text-red-600"
-                                            }`}
-                                    >
-                                        {formatPercent(pct)}
-                                    </TableCell>
-                                    <TableCell className="text-right">{qtd}</TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </Card>
         </div>
     );
 }

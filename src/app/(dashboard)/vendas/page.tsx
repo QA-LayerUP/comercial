@@ -93,14 +93,14 @@ export default async function VendasPage({
                     <p className="text-muted-foreground">{count || 0} vendas encontradas</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" className="border-[#0A1F44] text-[#0A1F44] hover:bg-[#0A1F44] hover:text-white" asChild>
                         <a href={`/api/vendas/export?${new URLSearchParams(Object.fromEntries(Object.entries({ ano: params.ano, mes: params.mes, categoria: params.categoria, busca: params.busca }).filter((entry): entry is [string, string] => entry[1] !== undefined))).toString()}`}>
                             <Download className="w-4 h-4 mr-2" />
                             Exportar CSV
                         </a>
                     </Button>
                     {isAdmin && (
-                        <Button size="sm" asChild>
+                        <Button size="sm" className="bg-[#8A2BE2] hover:bg-[#7B27CC] text-white" asChild>
                             <Link href="/vendas/nova">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Nova Venda
@@ -111,7 +111,7 @@ export default async function VendasPage({
             </div>
 
             {/* Filtros */}
-            <Card className="p-4">
+            <Card className="p-4 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
                 <form className="flex flex-wrap gap-3 items-end">
                     <div className="flex flex-col gap-1">
                         <label className="text-xs text-muted-foreground">Busca</label>
@@ -164,7 +164,7 @@ export default async function VendasPage({
                             ))}
                         </select>
                     </div>
-                    <Button type="submit" size="sm">
+                    <Button type="submit" size="sm" className="bg-[#8A2BE2] hover:bg-[#7B27CC] text-white">
                         <Search className="w-4 h-4 mr-1" /> Filtrar
                     </Button>
                     <Button type="button" variant="ghost" size="sm" asChild>
@@ -174,7 +174,7 @@ export default async function VendasPage({
             </Card>
 
             {/* Tabela */}
-            <Card>
+            <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow>

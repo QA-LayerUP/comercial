@@ -43,10 +43,13 @@ import {
     Target,
     UserCheck,
     Percent,
+    DollarSign,
     LogOut,
     ChevronUp,
     PanelLeftClose,
     PanelLeftOpen,
+    ArrowLeftRight,
+    Users2,
 } from "lucide-react";
 import type { Profile } from "@/lib/types/database";
 import { ROLES } from "@/lib/utils";
@@ -54,6 +57,9 @@ import { ROLES } from "@/lib/utils";
 const mainNav = [
     { title: "Dashboard", href: "/", icon: BarChart3 },
     { title: "Vendas", href: "/vendas", icon: ShoppingCart },
+    { title: "Comissões", href: "/comissoes", icon: DollarSign },
+    { title: "Comparativo YoY", href: "/comparativo", icon: ArrowLeftRight },
+    { title: "Equipe", href: "/equipe", icon: Users2 },
     { title: "Clientes", href: "/clientes", icon: Users },
 ];
 
@@ -230,7 +236,7 @@ export function AppSidebar({ profile }: AppSidebarProps) {
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className="w-full h-auto py-2">
                                     <Avatar className="w-8 h-8 shrink-0">
-                                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-semibold">
+                                        <AvatarFallback className="bg-gradient-to-br from-[#8A2BE2] to-[#6B21A8] text-white text-xs font-semibold">
                                             {initials}
                                         </AvatarFallback>
                                     </Avatar>

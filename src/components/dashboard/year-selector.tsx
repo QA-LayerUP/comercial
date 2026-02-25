@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
     Select,
     SelectContent,
@@ -17,11 +17,12 @@ export function YearSelector({
     anoSelecionado: number;
 }) {
     const router = useRouter();
+    const pathname = usePathname();
 
     return (
         <Select
             value={anoSelecionado.toString()}
-            onValueChange={(val) => router.push(`/?ano=${val}`)}
+            onValueChange={(val) => router.push(`${pathname}?ano=${val}`)}
         >
             <SelectTrigger className="w-28">
                 <SelectValue />
