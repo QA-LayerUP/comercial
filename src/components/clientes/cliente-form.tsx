@@ -24,6 +24,9 @@ interface ClienteFormProps {
     hideHeader?: boolean;
 }
 export function ClienteForm({ cliente, onSuccess, hideHeader }: ClienteFormProps) {
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     const router = useRouter();
     const [loading, setLoading] = useState(false);

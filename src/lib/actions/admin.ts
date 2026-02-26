@@ -647,4 +647,7 @@ export async function initializeEquipeYear(
     }
 }
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

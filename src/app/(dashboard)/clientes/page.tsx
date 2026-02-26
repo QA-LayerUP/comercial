@@ -43,9 +43,12 @@ export default async function ClientesPage({
                     <p className="text-muted-foreground">{count || 0} clientes</p>
                 </div>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 {isAdmin && (
                     <Button size="sm" asChild>
 =======
+=======
+>>>>>>> Stashed changes
                 {canCreate && (
                     <Button className="bg-[#E91E8C] hover:bg-[#D4177F] text-white" size="sm" asChild>
 >>>>>>> Stashed changes
