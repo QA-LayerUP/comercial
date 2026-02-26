@@ -178,17 +178,6 @@ export default async function ComissoesPage({
                         Valores de comissão por vendedor para envio ao DP
                     </p>
                 </div>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                <Button variant="outline" size="sm" className="bg-[#E91E8C] text-white hover:bg-[#D4177F] border-[#E91E8C]" asChild>
-                    <a href={`/api/comissoes/export?${exportParams.toString()}`}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Exportar CSV
-                    </a>
-                </Button>
-=======
-=======
->>>>>>> Stashed changes
                 {canDownload && (
                     <Button className="bg-[#E91E8C] hover:bg-[#D4177F] text-white" size="sm" asChild>
                         <a href={`/api/comissoes/export?${exportParams.toString()}`}>
@@ -197,10 +186,6 @@ export default async function ComissoesPage({
                         </a>
                     </Button>
                 )}
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
             </div>
 
             {/* Filters */}

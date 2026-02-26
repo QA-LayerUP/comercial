@@ -37,13 +37,6 @@ export default async function ClienteDetailPage({ params }: { params: Promise<{ 
                 </div>
                 {(canEdit || canDelete) && (
                     <div className="flex gap-2">
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                        <Button variant="outline" size="sm" asChild><Link href={`/clientes/${cliente.id}/editar`}><Edit className="w-4 h-4 mr-2" />Editar</Link></Button>
-                        <DeleteClienteButton clienteId={cliente.id} />
-=======
-=======
->>>>>>> Stashed changes
                         {canEdit && (
                             <Button variant="outline" size="sm" className="rounded-lg" asChild>
                                 <Link href={`/clientes/${cliente.id}/editar`}>
@@ -52,10 +45,6 @@ export default async function ClienteDetailPage({ params }: { params: Promise<{ 
                             </Button>
                         )}
                         {canDelete && <DeleteClienteButton clienteId={cliente.id} />}
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
                     </div>
                 )}
             </div>

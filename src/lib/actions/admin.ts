@@ -411,8 +411,6 @@ export async function deleteSalesPerson(id: number) {
     revalidatePath("/admin/equipe");
     return { success: true };
 }
-<<<<<<< Updated upstream
-=======
 
 // ---- REGRAS DE COMISSÃO ----
 export async function addRegraComissao(formData: FormData) {
@@ -647,7 +645,3 @@ export async function initializeEquipeYear(
     }
 }
 
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes

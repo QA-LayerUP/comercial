@@ -1,24 +1,12 @@
 import { getProfile } from "@/lib/actions/auth";
 import { getMetasPageData } from "@/lib/actions/admin";
 import { redirect } from "next/navigation";
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-import { CATEGORIAS } from "@/lib/utils";
-import { MetasGrid } from "@/components/admin/metas-grid";
-import { YearSelector } from "@/components/dashboard/year-selector";
-=======
 import { formatMoney } from "@/lib/utils";
 import { MetasGrid } from "@/components/admin/metas-grid";
 import { YearSelector } from "@/components/dashboard/year-selector";
-=======
-import { formatMoney } from "@/lib/utils";
-import { MetasGrid } from "@/components/admin/metas-grid";
-import { YearSelector } from "@/components/dashboard/year-selector";
->>>>>>> Stashed changes
 import { AddYearDialog } from "@/components/admin/add-year-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Target, TrendingUp, Layers } from "lucide-react";
->>>>>>> Stashed changes
 
 export default async function MetasPage({
     searchParams,
@@ -36,28 +24,6 @@ export default async function MetasPage({
     const data = await getMetasPageData(ano);
     if (!data) redirect("/login");
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    const metas: Record<string, Record<number, number>> = {};
-    CATEGORIAS.forEach((cat) => { metas[cat] = {}; });
-    metasData?.forEach((m) => {
-        if (m.mes) {
-            if (!metas[m.categoria]) metas[m.categoria] = {};
-            metas[m.categoria][m.mes] = Number(m.valor_meta);
-        }
-    });
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Metas</h1>
-                    <p className="text-muted-foreground">Defina as metas mensais por categoria</p>
-                </div>
-                <YearSelector anos={anos} anoSelecionado={ano} />
-            </div>
-            <MetasGrid ano={ano} initialMetas={metas} />
-=======
     const { anos, categorias, metas, kpis } = data;
 
     return (
@@ -75,25 +41,6 @@ export default async function MetasPage({
                 </div>
             </header>
 
-=======
-    const { anos, categorias, metas, kpis } = data;
-
-    return (
-        <div className="space-y-6 min-w-0">
-            <header className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Metas</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Defina as metas mensais por categoria — {data.ano}
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <YearSelector anos={anos} anoSelecionado={data.ano} />
-                    <AddYearDialog />
-                </div>
-            </header>
-
->>>>>>> Stashed changes
             <section className="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label="Resumo das metas">
                 <Card className="rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-0 bg-[#FFC857] overflow-hidden relative">
                     <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/15 rounded-full" aria-hidden />
@@ -146,10 +93,6 @@ export default async function MetasPage({
             </section>
 
             <MetasGrid ano={data.ano} initialMetas={metas} readOnly={profile?.role !== "admin"} />
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         </div>
     );
 }

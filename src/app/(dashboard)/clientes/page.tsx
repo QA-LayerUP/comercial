@@ -42,16 +42,8 @@ export default async function ClientesPage({
                     <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
                     <p className="text-muted-foreground">{count || 0} clientes</p>
                 </div>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                {isAdmin && (
-                    <Button size="sm" asChild>
-=======
-=======
->>>>>>> Stashed changes
                 {canCreate && (
                     <Button className="bg-[#E91E8C] hover:bg-[#D4177F] text-white" size="sm" asChild>
->>>>>>> Stashed changes
                         <Link href="/clientes/novo">
                             <Plus className="w-4 h-4 mr-2" /> Novo Cliente
                         </Link>
