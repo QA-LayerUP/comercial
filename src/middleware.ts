@@ -1,8 +1,21 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-    return await updateSession(request);
+    try {
+        const result = await Promise.race([
+            updateSession(request),
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("supabase_timeout")), 8000)
+            ),
+        ]);
+        return result;
+    } catch (err) {
+        // Se Supabase não responder, deixa a requisição passar.
+        // Os Server Components farão a verificação de auth individualmente.
+        console.error("[middleware] error:", err instanceof Error ? err.message : err);
+        return NextResponse.next({ request });
+    }
 }
 
 export const config = {
