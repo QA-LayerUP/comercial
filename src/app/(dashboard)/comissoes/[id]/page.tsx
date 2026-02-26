@@ -12,8 +12,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
+import { ArrowLeft, DollarSign, ShoppingCart, TrendingUp, Download } from "lucide-react";
 import { formatMoneyDecimal, MESES, CORES_CATEGORIA } from "@/lib/utils";
+import { getProfile } from "@/lib/actions/auth";
+import { canDownloadComissoes } from "@/lib/permissions";
 import type { Venda } from "@/lib/types/database";
 
 const SP_FIELDS = [
@@ -44,6 +46,8 @@ export default async function ComissaoVendedorPage({
 }) {
     const { id } = await params;
     const search = await searchParams;
+    const profile = await getProfile();
+    const canDownload = canDownloadComissoes(profile);
     const supabase = await createClient();
 
     const spId = parseInt(id);
@@ -78,16 +82,17 @@ export default async function ComissaoVendedorPage({
     ) as Venda[];
 
     // Calcular comissão por venda
+    // comissao_valor já está gravado por vendedor; SDR recebe 5% do total
     const vendasComComissao = vendasDoVendedor.map((v) => {
-        const comissaoPorPessoa =
-            v.volume_sales_people > 0
-                ? Number(v.comissao_valor) / v.volume_sales_people
-                : Number(v.comissao_valor);
+        const comissaoTotal = Number(v.comissao_valor) * (v.volume_sales_people || 1);
+        const comissaoIndividual = v.sdr_id === spId
+            ? comissaoTotal * 0.05
+            : Number(v.comissao_valor);
         const papel = getRoleLabel(v, spId);
 
         return {
             ...v,
-            comissaoIndividual: comissaoPorPessoa,
+            comissaoIndividual,
             papel,
         };
     });
@@ -126,24 +131,39 @@ export default async function ComissaoVendedorPage({
     backParams.set("ano", anoSelecionado.toString());
     if (search.mes) backParams.set("mes", search.mes);
 
+    // Build export URL
+    const exportParams = new URLSearchParams();
+    exportParams.set("ano", anoSelecionado.toString());
+    if (search.mes) exportParams.set("mes", search.mes);
+
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href={`/comissoes?${backParams.toString()}`}>
-                        <ArrowLeft className="w-4 h-4" />
-                    </Link>
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{vendedor.nome}</h1>
-                    <p className="text-muted-foreground">
-                        Comissões de {anoSelecionado}
-                        {search.mes ? ` — ${MESES[parseInt(search.mes) - 1]}` : ""}
-                        {" · "}
-                        <span className="capitalize">{vendedor.cargo}</span>
-                    </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href={`/comissoes?${backParams.toString()}`}>
+                            <ArrowLeft className="w-4 h-4" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{vendedor.nome}</h1>
+                        <p className="text-muted-foreground">
+                            Comissões de {anoSelecionado}
+                            {search.mes ? ` — ${MESES[parseInt(search.mes) - 1]}` : ""}
+                            {" · "}
+                            <span className="capitalize">{vendedor.cargo}</span>
+                        </p>
+                    </div>
                 </div>
+                {canDownload && (
+                    <Button className="bg-[#E91E8C] hover:bg-[#D4177F] text-white" size="sm" asChild>
+                        <a href={`/api/comissoes/vendedor/${spId}/export?${exportParams.toString()}`}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Exportar CSV
+                        </a>
+                    </Button>
+                )}
             </div>
 
             {/* KPI Cards */}

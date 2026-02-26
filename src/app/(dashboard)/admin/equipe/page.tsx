@@ -5,7 +5,7 @@ import { EquipeManager } from "@/components/admin/equipe-manager";
 
 export default async function EquipePage() {
     const profile = await getProfile();
-    if (profile?.role !== "admin") redirect("/");
+    if (!["admin", "financeiro"].includes(profile?.role ?? "")) redirect("/");
 
     const supabase = await createClient();
     const { data: salesPeople } = await supabase.from("sales_people").select("*").order("cargo").order("nome");

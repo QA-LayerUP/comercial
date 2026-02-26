@@ -2,15 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { isAdmin } from "./auth";
+import { hasAnyRole } from "./auth";
 
 export async function createCliente(formData: FormData) {
-    const admin = await isAdmin();
-    if (!admin) return { error: "Acesso restrito a administradores." };
+    const allowed = await hasAnyRole(["admin", "financeiro", "vendas"]);
+    if (!allowed) return { error: "Sem permissão para cadastrar clientes." };
 
     const supabase = await createClient();
 
-    const { error } = await supabase.from("clientes").insert({
+    const { data, error } = await supabase.from("clientes").insert({
         confidencialidade: formData.get("confidencialidade") as string || "",
         nome: (formData.get("nome") as string).trim(),
         cnpj_cpf: (formData.get("cnpj_cpf") as string || "").trim(),
@@ -23,17 +23,17 @@ export async function createCliente(formData: FormData) {
         link_contrato: formData.get("link_contrato") as string || "",
         link_proposta: formData.get("link_proposta") as string || "",
         observacoes: formData.get("observacoes") as string || "",
-    });
+    }).select("id, nome").single();
 
     if (error) return { error: `Erro ao cadastrar cliente: ${error.message}` };
 
     revalidatePath("/clientes");
-    return { success: true };
+    return { success: true, data };
 }
 
 export async function updateCliente(id: number, formData: FormData) {
-    const admin = await isAdmin();
-    if (!admin) return { error: "Acesso restrito a administradores." };
+    const allowed = await hasAnyRole(["admin", "financeiro", "vendas"]);
+    if (!allowed) return { error: "Sem permissão para editar clientes." };
 
     const supabase = await createClient();
 
@@ -64,8 +64,8 @@ export async function updateCliente(id: number, formData: FormData) {
 }
 
 export async function deleteCliente(id: number) {
-    const admin = await isAdmin();
-    if (!admin) return { error: "Acesso restrito a administradores." };
+    const allowed = await hasAnyRole(["admin", "financeiro"]);
+    if (!allowed) return { error: "Sem permissão para excluir clientes." };
 
     const supabase = await createClient();
 

@@ -1,7 +1,7 @@
 export interface Profile {
     id: string;
     nome: string;
-    role: "admin" | "comercial" | "visitante";
+    role: "admin" | "financeiro" | "vendas";
     ativo: boolean;
     created_at: string;
 }
@@ -94,4 +94,49 @@ export interface Meta {
     categoria: string;
     mes: number | null;
     valor_meta: number;
+}
+
+/** Metas por categoria: categoria -> { mes -> valor_meta } */
+export type MetasByCategory = Record<string, Record<number, number>>;
+
+export interface MetasPageData {
+    ano: number;
+    anos: number[];
+    categorias: string[];
+    metas: MetasByCategory;
+    kpis: {
+        totalMeta: number;
+        categoriasComMeta: number;
+        mediaMensal: number;
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Metas Equipe (metas individuais por pessoa)
+// ---------------------------------------------------------------------------
+
+export interface MetaEquipe {
+    id: number;
+    ano: number;
+    mes: number;
+    categoria: string;
+    sales_person_id: number;
+    valor_meta: number;
+    created_at: string;
+}
+
+/**
+ * Estrutura de estado do grid de metas equipe:
+ * categoria -> salesPersonId -> mes -> valor_meta
+ */
+export type MetasEquipeData = Record<string, Record<number, Record<number, number>>>;
+
+export interface MetasEquipePageData {
+    ano: number;
+    anos: number[];
+    categorias: string[];
+    salesPeople: SalesPerson[];
+    metasEquipe: MetasEquipeData;
+    /** Metas globais (da tabela metas) usadas como referência */
+    metasGlobais: MetasByCategory;
 }

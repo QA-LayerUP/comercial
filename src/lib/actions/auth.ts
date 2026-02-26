@@ -50,3 +50,10 @@ export async function isAdmin(): Promise<boolean> {
     const profile = await getProfile();
     return profile?.role === "admin" && profile?.ativo === true;
 }
+
+/** Retorna true se o usuário ativo tem qualquer um dos roles indicados */
+export async function hasAnyRole(roles: string[]): Promise<boolean> {
+    const profile = await getProfile();
+    if (!profile?.ativo) return false;
+    return roles.includes(profile.role);
+}

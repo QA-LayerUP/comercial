@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/actions/auth";
+import { canDownloadComissoes } from "@/lib/permissions";
 
 export async function GET(request: Request) {
+    const profile = await getProfile();
+    if (!canDownloadComissoes(profile)) {
+        return NextResponse.json({ error: "Sem permissão para exportar dados." }, { status: 403 });
+    }
+
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
 

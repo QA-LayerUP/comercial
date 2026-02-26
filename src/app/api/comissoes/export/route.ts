@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/actions/auth";
+import { canDownloadComissoes } from "@/lib/permissions";
 
 const SP_FIELDS = [
     "estrategia1_id",
@@ -12,6 +14,11 @@ const SP_FIELDS = [
 ];
 
 export async function GET(request: Request) {
+    const profile = await getProfile();
+    if (!canDownloadComissoes(profile)) {
+        return NextResponse.json({ error: "Sem permissão para exportar comissões." }, { status: 403 });
+    }
+
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
 

@@ -54,10 +54,45 @@ export const CARGOS = [
 ] as const;
 
 export const ROLES = [
-  { value: "admin", label: "Admin", color: "bg-red-500" },
-  { value: "comercial", label: "Comercial", color: "bg-blue-500" },
-  { value: "visitante", label: "Visitante", color: "bg-gray-500" },
+  { value: "admin",      label: "Admin",      color: "bg-red-500" },
+  { value: "financeiro", label: "Financeiro", color: "bg-purple-500" },
+  { value: "vendas",     label: "Vendas",     color: "bg-blue-500" },
 ] as const;
+
+export interface ComissaoResult {
+  /** Valor base usado para calcular comissão (valor/12 para Fee Mensal) */
+  baseCalculo: number;
+  /** Comissão total antes de dividir pelos vendedores */
+  comissaoTotal: number;
+  /** Comissão por vendedor — é o valor gravado em comissao_valor */
+  comissaoPorVendedor: number;
+  /** Comissão do SDR = 5 % da comissaoTotal */
+  comissaoSDR: number;
+}
+
+/**
+ * Calcula os valores de comissão conforme a regra:
+ * - Fee Mensal: base = (valor - repasse) / 12
+ * - Outros:     base = (valor - repasse)
+ * - comissaoPorVendedor = base * pct / 100 / volumeSalesPeople
+ * - comissaoSDR = base * pct / 100 * 5%
+ */
+export function calcComissao(
+  tipo: string,
+  valor: number,
+  valorRepasse: number,
+  comissaoPct: number,
+  volumeSalesPeople: number
+): ComissaoResult {
+  const isFeeMenusal = tipo.trim().toLowerCase() === "fee mensal";
+  const valorLiquido = valor - valorRepasse;
+  const baseCalculo = isFeeMenusal ? valorLiquido / 12 : valorLiquido;
+  const comissaoTotal = baseCalculo * (comissaoPct / 100);
+  const vol = volumeSalesPeople > 0 ? volumeSalesPeople : 1;
+  const comissaoPorVendedor = comissaoTotal / vol;
+  const comissaoSDR = comissaoTotal * 0.05;
+  return { baseCalculo, comissaoTotal, comissaoPorVendedor, comissaoSDR };
+}
 
 export const CORES_CATEGORIA: Record<string, { bg: string; border: string; tw: string }> = {
   "Novo Cliente": { bg: "rgba(40, 167, 69, 0.7)", border: "#28a745", tw: "bg-emerald-500" },

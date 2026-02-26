@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Save, Loader2, CalendarDays, Tag, DollarSign, Users2, FileText } from "lucide-react";
-import { MESES } from "@/lib/utils";
+import { MESES, calcComissao } from "@/lib/utils";
 import { createVenda, updateVenda } from "@/lib/actions/vendas";
 import { toast } from "sonner";
 import Link from "next/link";
 import type { Venda, SalesPerson, Cliente } from "@/lib/types/database";
+
+import { ClientAutocomplete } from "@/components/clientes/client-autocomplete";
 
 const selectClass =
     "w-full h-10 rounded-lg border-transparent bg-[#F5F6FA] px-3 text-sm transition-colors focus:bg-white focus:border-[#FFC857] focus:ring-2 focus:ring-[#FFC857]/20 outline-none";
@@ -26,11 +28,16 @@ interface VendaFormProps {
     clientes: Cliente[];
 }
 
-export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
+export function VendaForm({ venda, salesPeople, clientes: initialClientes }: VendaFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const isEdit = !!venda;
     const anoAtual = new Date().getFullYear();
+
+    const [localClientes, setLocalClientes] = useState<Cliente[]>(initialClientes);
+    const [selectedClient, setSelectedClient] = useState<{ id: number; nome: string } | null>(
+        venda ? { id: venda.cliente_id || 0, nome: venda.nome_cliente } : null
+    );
 
     // Venda codigo auto-generation
     const [vendaCodigo, setVendaCodigo] = useState(venda?.venda_codigo || "");
@@ -54,9 +61,16 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
     const [valor, setValor] = useState(venda?.valor?.toString() || "0");
     const [valorRepasse, setValorRepasse] = useState(venda?.valor_repasse?.toString() || "0");
     const [comissaoPct, setComissaoPct] = useState(venda?.comissao_percentual?.toString() || "0");
+    const [volumeSalesPeople, setVolumeSalesPeople] = useState(venda?.volume_sales_people || 1);
 
-    const valorCalculo = (parseFloat(valor) || 0) - (parseFloat(valorRepasse) || 0);
-    const comissaoValor = valorCalculo * ((parseFloat(comissaoPct) || 0) / 100);
+    const isFeeMenusal = tipo.trim().toLowerCase() === "fee mensal";
+    const { baseCalculo, comissaoPorVendedor, comissaoSDR } = calcComissao(
+        tipo,
+        parseFloat(valor) || 0,
+        parseFloat(valorRepasse) || 0,
+        parseFloat(comissaoPct) || 0,
+        volumeSalesPeople
+    );
 
     const supabase = createClient();
 
@@ -197,6 +211,12 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+
+        if (!selectedClient) {
+            toast.error("Por favor, selecione um cliente.");
+            return;
+        }
+
         setLoading(true);
         const formData = new FormData(e.currentTarget);
 
@@ -268,18 +288,20 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
                                 ))}
                             </select>
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 lg:col-span-2">
                             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</Label>
-                            <Input name="nome_cliente" defaultValue={venda?.nome_cliente || ""} required className={inputClass} placeholder="Nome do cliente..." />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Vincular Cliente</Label>
-                            <select name="cliente_id" defaultValue={venda?.cliente_id?.toString() || ""} className={selectClass}>
-                                <option value="">-- Nenhum --</option>
-                                {clientes.map((c) => (
-                                    <option key={c.id} value={c.id}>{c.nome}</option>
-                                ))}
-                            </select>
+                            <input type="hidden" name="nome_cliente" value={selectedClient?.nome || ""} />
+                            <input type="hidden" name="cliente_id" value={selectedClient?.id || ""} />
+                            <ClientAutocomplete
+                                clientes={localClientes}
+                                defaultValue={selectedClient || undefined}
+                                onSelect={(client) => {
+                                    setSelectedClient(client);
+                                    if (client && !localClientes.find(c => c.id === client.id)) {
+                                        setLocalClientes(prev => [...prev, client as any]);
+                                    }
+                                }}
+                            />
                         </div>
                     </div>
                 </CardContent>
@@ -364,8 +386,10 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
                             <Input name="valor_repasse" type="number" step="0.01" value={valorRepasse} onChange={(e) => setValorRepasse(e.target.value)} className={inputClass} />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Base Comissão</Label>
-                            <Input value={valorCalculo.toFixed(2)} readOnly className="h-10 bg-[#F0F0F0] border-transparent font-mono cursor-not-allowed" />
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Base Cálculo{isFeeMenusal ? <span className="ml-1 text-[#E91E8C]">(÷12)</span> : ""}
+                            </Label>
+                            <Input value={baseCalculo.toFixed(2)} readOnly className="h-10 bg-[#F0F0F0] border-transparent font-mono cursor-not-allowed" />
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Volume Horas</Label>
@@ -380,8 +404,12 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
                             <Input name="comissao_percentual" type="number" step="0.01" value={comissaoPct} onChange={(e) => setComissaoPct(e.target.value)} className={inputClass} />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Comissão Valor</Label>
-                            <Input value={`R$ ${comissaoValor.toFixed(2)}`} readOnly className="h-10 bg-[#F0F0F0] border-transparent font-mono cursor-not-allowed" />
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Comissão / Vendedor</Label>
+                            <Input value={`R$ ${comissaoPorVendedor.toFixed(2)}`} readOnly className="h-10 bg-[#F0F0F0] border-transparent font-mono cursor-not-allowed text-[#00C896]" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Comissão SDR (5%)</Label>
+                            <Input value={`R$ ${comissaoSDR.toFixed(2)}`} readOnly className="h-10 bg-[#F0F0F0] border-transparent font-mono cursor-not-allowed text-[#3A86FF]" />
                         </div>
                     </div>
                 </CardContent>
@@ -397,7 +425,14 @@ export function VendaForm({ venda, salesPeople, clientes }: VendaFormProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
                         <div className="space-y-1.5">
                             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Vol. Sales People</Label>
-                            <Input name="volume_sales_people" type="number" defaultValue={venda?.volume_sales_people || 1} className={inputClass} />
+                            <Input
+                                name="volume_sales_people"
+                                type="number"
+                                min={1}
+                                value={volumeSalesPeople}
+                                onChange={(e) => setVolumeSalesPeople(parseInt(e.target.value) || 1)}
+                                className={inputClass}
+                            />
                         </div>
                         {[
                             { name: "estrategia1_id", label: "Estratégia 1", cargo: "Estrategia" },

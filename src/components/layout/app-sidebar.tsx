@@ -50,6 +50,7 @@ import {
     PanelLeftOpen,
     ArrowLeftRight,
     Users2,
+    ListChecks,
 } from "lucide-react";
 import type { Profile } from "@/lib/types/database";
 import { ROLES } from "@/lib/utils";
@@ -63,10 +64,16 @@ const mainNav = [
     { title: "Clientes", href: "/clientes", icon: Users },
 ];
 
-const adminNav = [
-    { title: "Usuários", href: "/admin/usuarios", icon: UserCog },
+// Items visíveis para admin + financeiro
+const financeiroNav = [
     { title: "Metas", href: "/admin/metas", icon: Target },
+    { title: "Metas Equipe", href: "/admin/metas-equipe", icon: ListChecks },
     { title: "Equipe", href: "/admin/equipe", icon: UserCheck },
+];
+
+// Items exclusivos do admin
+const adminOnlyNav = [
+    { title: "Usuários", href: "/admin/usuarios", icon: UserCog },
     { title: "Regras de Comissão", href: "/admin/comissao", icon: Percent },
 ];
 
@@ -78,7 +85,14 @@ export function AppSidebar({ profile }: AppSidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { state, toggleSidebar } = useSidebar();
-    const isAdmin = profile?.role === "admin";
+    const role = profile?.role;
+    const isAdmin = role === "admin";
+    const isFinanceiro = role === "financeiro";
+    const showAdminSection = isAdmin || isFinanceiro;
+    // Itens que o financeiro pode ver (mais os admin-only se for admin)
+    const visibleAdminNav = isAdmin
+        ? [...financeiroNav, ...adminOnlyNav]
+        : financeiroNav;
     const isCollapsed = state === "collapsed";
 
     async function handleLogout() {
@@ -156,14 +170,13 @@ export function AppSidebar({ profile }: AppSidebarProps) {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-                {isAdmin && (
+                {showAdminSection && (
                     <SidebarGroup>
                         <SidebarGroupLabel>Administração</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 {isCollapsed ? (
-                                    // Collapsed: show admin items as flat icon buttons
-                                    adminNav.map((item) => (
+                                    visibleAdminNav.map((item) => (
                                         <SidebarMenuItem key={item.href}>
                                             <TooltipProvider delayDuration={0}>
                                                 <Tooltip>
@@ -184,14 +197,13 @@ export function AppSidebar({ profile }: AppSidebarProps) {
                                         </SidebarMenuItem>
                                     ))
                                 ) : (
-                                    // Expanded: show admin items as sub-menu
                                     <SidebarMenuItem>
                                         <SidebarMenuButton>
                                             <Settings className="w-4 h-4" />
                                             <span>Admin</span>
                                         </SidebarMenuButton>
                                         <SidebarMenuSub>
-                                            {adminNav.map((item) => (
+                                            {visibleAdminNav.map((item) => (
                                                 <SidebarMenuSubItem key={item.href}>
                                                     <SidebarMenuSubButton
                                                         asChild

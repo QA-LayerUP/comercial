@@ -14,7 +14,9 @@ export default async function ClienteDetailPage({ params }: { params: Promise<{ 
     const { id } = await params;
     const supabase = await createClient();
     const profile = await getProfile();
-    const isAdmin = profile?.role === "admin";
+    const { canEditCliente, canDeleteCliente } = await import("@/lib/permissions");
+    const canEdit = canEditCliente(profile);
+    const canDelete = canDeleteCliente(profile);
 
     const { data: cliente } = await supabase.from("clientes").select("*").eq("id", parseInt(id)).single();
     if (!cliente) notFound();
@@ -33,10 +35,21 @@ export default async function ClienteDetailPage({ params }: { params: Promise<{ 
                         </Badge>
                     </div>
                 </div>
-                {isAdmin && (
+                {(canEdit || canDelete) && (
                     <div className="flex gap-2">
+<<<<<<< Updated upstream
                         <Button variant="outline" size="sm" asChild><Link href={`/clientes/${cliente.id}/editar`}><Edit className="w-4 h-4 mr-2" />Editar</Link></Button>
                         <DeleteClienteButton clienteId={cliente.id} />
+=======
+                        {canEdit && (
+                            <Button variant="outline" size="sm" className="rounded-lg" asChild>
+                                <Link href={`/clientes/${cliente.id}/editar`}>
+                                    <Edit className="w-4 h-4 mr-2" />Editar
+                                </Link>
+                            </Button>
+                        )}
+                        {canDelete && <DeleteClienteButton clienteId={cliente.id} />}
+>>>>>>> Stashed changes
                     </div>
                 )}
             </div>

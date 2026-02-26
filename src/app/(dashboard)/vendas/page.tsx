@@ -37,7 +37,9 @@ export default async function VendasPage({
     const params = await searchParams;
     const supabase = await createClient();
     const profile = await getProfile();
-    const isAdmin = profile?.role === "admin";
+    const { canCreateVenda, canDownloadComissoes } = await import("@/lib/permissions");
+    const canCreate = canCreateVenda(profile);
+    const canDownload = canDownloadComissoes(profile);
 
     const page = parseInt(params.page || "1");
     const perPage = 25;
@@ -94,13 +96,15 @@ export default async function VendasPage({
                     <p className="text-muted-foreground text-sm">{count || 0} vendas encontradas</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white" asChild>
-                        <a href={`/api/vendas/export?${new URLSearchParams(Object.fromEntries(Object.entries({ ano: params.ano, mes: params.mes, categoria: params.categoria, busca: params.busca }).filter((entry): entry is [string, string] => entry[1] !== undefined))).toString()}`}>
-                            <Download className="w-4 h-4 mr-2" />
-                            Exportar CSV
-                        </a>
-                    </Button>
-                    {isAdmin && (
+                    {canDownload && (
+                        <Button variant="outline" size="sm" className="border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white" asChild>
+                            <a href={`/api/vendas/export?${new URLSearchParams(Object.fromEntries(Object.entries({ ano: params.ano, mes: params.mes, categoria: params.categoria, busca: params.busca }).filter((entry): entry is [string, string] => entry[1] !== undefined))).toString()}`}>
+                                <Download className="w-4 h-4 mr-2" />
+                                Exportar CSV
+                            </a>
+                        </Button>
+                    )}
+                    {canCreate && (
                         <Button size="sm" className="bg-[#E91E8C] hover:bg-[#D4177F] text-white" asChild>
                             <Link href="/vendas/nova">
                                 <Plus className="w-4 h-4 mr-2" />

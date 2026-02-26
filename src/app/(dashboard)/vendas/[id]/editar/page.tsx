@@ -1,5 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/actions/auth";
+import { canEditVenda } from "@/lib/permissions";
 import { VendaForm } from "@/components/vendas/venda-form";
 
 export default async function EditarVendaPage({
@@ -8,6 +10,9 @@ export default async function EditarVendaPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
+    const profile = await getProfile();
+    if (!canEditVenda(profile)) redirect("/vendas");
+
     const supabase = await createClient();
 
     const { data: venda } = await supabase

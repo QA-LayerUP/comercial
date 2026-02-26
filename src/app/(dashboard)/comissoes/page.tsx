@@ -13,6 +13,8 @@ import {
 import { DollarSign, Users, ShoppingCart, Download } from "lucide-react";
 import { formatMoneyDecimal } from "@/lib/utils";
 import { ComissoesFilters } from "@/components/comissoes/comissoes-filters";
+import { getProfile } from "@/lib/actions/auth";
+import { canDownloadComissoes } from "@/lib/permissions";
 import type { Venda, SalesPerson } from "@/lib/types/database";
 
 // Campos de vendedor na venda
@@ -33,6 +35,12 @@ interface VendedorResumo {
     qtdVendas: number;
 }
 
+function getComissaoParaPessoa(venda: Venda, spId: number): number {
+    // comissao_valor já está gravado por vendedor; SDR recebe 5% do total
+    const comissaoTotal = Number(venda.comissao_valor) * (venda.volume_sales_people || 1);
+    return venda.sdr_id === spId ? comissaoTotal * 0.05 : Number(venda.comissao_valor);
+}
+
 function calcularComissoesPorVendedor(vendas: Venda[], salesPeople: SalesPerson[]): VendedorResumo[] {
     const spMap = new Map<number, string>();
     salesPeople.forEach((sp) => spMap.set(sp.id, sp.nome));
@@ -40,11 +48,6 @@ function calcularComissoesPorVendedor(vendas: Venda[], salesPeople: SalesPerson[
     const resumo = new Map<number, VendedorResumo>();
 
     for (const venda of vendas) {
-        const comissaoPorPessoa =
-            venda.volume_sales_people > 0
-                ? Number(venda.comissao_valor) / venda.volume_sales_people
-                : Number(venda.comissao_valor);
-
         const idsEnvolvidos = new Set<number>();
         for (const field of SP_FIELDS) {
             const spId = venda[field as keyof Venda] as number | null;
@@ -57,15 +60,17 @@ function calcularComissoesPorVendedor(vendas: Venda[], salesPeople: SalesPerson[
             const nome = spMap.get(spId);
             if (!nome) continue;
 
+            const comissao = getComissaoParaPessoa(venda, spId);
+
             const existing = resumo.get(spId);
             if (existing) {
-                existing.totalComissao += comissaoPorPessoa;
+                existing.totalComissao += comissao;
                 existing.qtdVendas += 1;
             } else {
                 resumo.set(spId, {
                     id: spId,
                     nome,
-                    totalComissao: comissaoPorPessoa,
+                    totalComissao: comissao,
                     qtdVendas: 1,
                 });
             }
@@ -81,6 +86,8 @@ export default async function ComissoesPage({
     searchParams: Promise<{ ano?: string; mes?: string; vendedor?: string }>;
 }) {
     const params = await searchParams;
+    const profile = await getProfile();
+    const canDownload = canDownloadComissoes(profile);
     const supabase = await createClient();
 
     // Anos disponíveis
@@ -171,12 +178,23 @@ export default async function ComissoesPage({
                         Valores de comissão por vendedor para envio ao DP
                     </p>
                 </div>
+<<<<<<< Updated upstream
                 <Button variant="outline" size="sm" className="bg-[#E91E8C] text-white hover:bg-[#D4177F] border-[#E91E8C]" asChild>
                     <a href={`/api/comissoes/export?${exportParams.toString()}`}>
                         <Download className="w-4 h-4 mr-2" />
                         Exportar CSV
                     </a>
                 </Button>
+=======
+                {canDownload && (
+                    <Button className="bg-[#E91E8C] hover:bg-[#D4177F] text-white" size="sm" asChild>
+                        <a href={`/api/comissoes/export?${exportParams.toString()}`}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Exportar CSV
+                        </a>
+                    </Button>
+                )}
+>>>>>>> Stashed changes
             </div>
 
             {/* Filters */}

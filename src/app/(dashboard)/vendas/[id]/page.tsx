@@ -16,7 +16,9 @@ export default async function VendaDetailPage({
     const { id } = await params;
     const supabase = await createClient();
     const profile = await getProfile();
-    const isAdmin = profile?.role === "admin";
+    const { canEditVenda, canDeleteVenda } = await import("@/lib/permissions");
+    const canEdit = canEditVenda(profile);
+    const canDelete = canDeleteVenda(profile);
 
     const { data: venda } = await supabase
         .from("vendas")
@@ -88,15 +90,17 @@ export default async function VendaDetailPage({
                         </div>
                     </div>
                 </div>
-                {isAdmin && (
+                {(canEdit || canDelete) && (
                     <div className="flex gap-2 shrink-0">
-                        <Button variant="outline" size="sm" className="rounded-lg" asChild>
-                            <Link href={`/vendas/${venda.id}/editar`}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Editar
-                            </Link>
-                        </Button>
-                        <DeleteVendaButton vendaId={venda.id} />
+                        {canEdit && (
+                            <Button variant="outline" size="sm" className="rounded-lg" asChild>
+                                <Link href={`/vendas/${venda.id}/editar`}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Editar
+                                </Link>
+                            </Button>
+                        )}
+                        {canDelete && <DeleteVendaButton vendaId={venda.id} />}
                     </div>
                 )}
             </div>
