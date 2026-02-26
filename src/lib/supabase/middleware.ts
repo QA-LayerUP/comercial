@@ -29,12 +29,17 @@ export async function updateSession(request: NextRequest) {
         }
     );
 
+    // Use getSession() — reads from cookie without network call.
+    // getUser() (with network validation) runs in Server Components instead.
     const {
-        data: { user },
-    } = await supabase.auth.getUser();
+        data: { session },
+    } = await supabase.auth.getSession();
 
-    // If not logged in and trying to access protected routes, redirect to login
-    const isAuthRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/cadastro");
+    const user = session?.user ?? null;
+
+    const isAuthRoute =
+        request.nextUrl.pathname.startsWith("/login") ||
+        request.nextUrl.pathname.startsWith("/cadastro");
 
     if (!user && !isAuthRoute) {
         const url = request.nextUrl.clone();
@@ -42,7 +47,6 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    // If logged in and on login page, redirect to dashboard
     if (user && isAuthRoute) {
         const url = request.nextUrl.clone();
         url.pathname = "/";
